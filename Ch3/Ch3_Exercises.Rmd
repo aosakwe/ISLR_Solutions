@@ -122,10 +122,13 @@ Note: I really need to review LaTex...
 
 ``` {r Q7, echo = TRUE}
 setwd(getwd())
-knitr::include_graphics("Q7_1.jpeg")
-knitr::include_graphics("Q7_2.jpeg")
-
 ```
+
+![Part 1 ](Q7_1.jpeg)
+![Part 2 ](Q7_2.jpeg)
+
+
+
 # Applied
   
   
