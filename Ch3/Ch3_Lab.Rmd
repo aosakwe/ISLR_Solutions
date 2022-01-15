@@ -1,0 +1,180 @@
+---
+title: "ISLR Chapter 3 lab"
+output:
+  html_notebook: default
+  pdf_document: default
+author: "Adrien Osakwe"
+---
+
+## Load Libraries
+
+``` {r Library, echo = TRUE}
+library(MASS)
+library(ISLR2)
+```
+
+## Simple Linear Regression
+
+``` {r SLR, echo = TRUE}
+head(Boston)
+
+lm.fit <- lm(medv ~ lstat, data = Boston)
+
+# Showing basic info from the generated model
+lm.fit
+
+#Detailed information on model
+summary(lm.fit)
+
+# Confidence Intervals for coefficients
+confint(lm.fit)
+
+
+#Predict a series of medv values given a set of lstat values with 95% CI
+predict(lm.fit, data.frame(lstat = (c(3,10,20))), interval = "confidence")
+
+#Plotting Model
+plot(Boston$lstat,Boston$medv)
+abline(lm.fit)
+
+#Trying some other stuff out
+attach(Boston)
+abline(lm.fit, lwd = 3, col = "red") # plots a thicker red line
+
+plot(lstat,medv,pch = 20) #changing symbol of points by symbol ID
+plot(lstat, medv, pch = "+")
+
+
+#Diagnostic Plots - There are 4 plots if we plot lm.fit directly
+par(mfrow = c(2,2))
+plot(lm.fit)
+# The residuals vs fitted plot shows that there is a non-linear trend that was not captured by the model
+#Scale Location plot shows certain values have an SR above sqrt(3) indicating potential outliers
+#Residuals vs Leverage shows that there are observations with both a high leverage AND SR, meaning they should probably be removed
+# The Q-Q plot has a considerable fat tail on the RHS indicating non-normality --> transforming the data could fix this - let's try it !
+
+
+#Log transformed medv linear regression
+par(mfrow = c(2,2))
+plot(lm(log(medv) ~ lstat))
+#This seems to improve a lot but not completely, still have apparent outliers to deal with
+#Will have to look into this more in the future to see how to accomodate the fat tail of the Q-Q plot
+
+#Note: can also plot these diagnostics individually with i.e. hatvalues for leverage, residuals() for residuals, and rstudent() for studentized residuals. Trying it out for leverage stats below:
+
+#Leverage Statistics
+#hatvalues function calculates the leverage statistics for the predictors
+plot(hatvalues(lm.fit))
+#find index with the largest leverage
+which.max(hatvalues(lm.fit))
+```
+
+
+
+## Multiple Linear Regression
+
+``` {r MLR, echo = TRUE}
+#Now adding age to the model to create a multiple linear regression
+attach(Boston)
+lm.fit <- lm(medv ~ lstat + age)
+summary(lm.fit)
+#It seems that R-squared barely changes upon adding age as a predictor. Age's coefficient has a significant p value but much less than lstat
+# The F-statistic actually drops although it is still much larger than one
+
+
+## Adding all predictors
+lm.fit <- lm(medv ~ ., data = Boston)
+summary(lm.fit)
+#R-squared and RSE decrease, F-stat is still well above 1
+
+
+#Looking at Variance Inflation Factor to identify collinearity
+library(car)
+vif(lm.fit)
+# tax and rad are pretty high relative to the others
+#nox, dis and indus are also high
+#Looking into what these variables are may give insight into why we are seeing collinearity and we can then decide which predictors to keep
+
+
+#All but some predictors in model
+#Will remove indus and age because of the high p values as well as tax given the high VIF
+lm.fit <- update(lm.fit, ~.-age)
+lm.fit <- update(lm.fit, ~.-indus)
+lm.fit <- update(lm.fit, ~.-tax)
+summary(lm.fit)
+#Barely changes R-squared, RSE and F
+vif(lm.fit)
+#Also seem much lower VIF scores --> rad and tax must have been collinear 
+#One is for property tax and the other for accessibility to radial highways which facilitate access to different regions by car
+#Could look into this more to understand why they would be collinear
+```
+
+
+## Interaction Terms
+
+``` {r Interact, echo = TRUE}
+
+#Building model with lstat, age and their interaction as a product 
+lm.fit <- lm(medv ~ lstat*age, data = Boston)
+summary(lm.fit)
+
+#The interaction between lstat and age seems to be much more important than age
+#Let's try with others
+#lstat is important, so is its interaction with age, lets add the interaction of crime and lstat
+lm.fit <- lm(medv ~ lstat*age + lstat*crim, data = Boston)
+summary(lm.fit)
+#Does not improve the model much... could try this out again later
+```
+
+## Non-linear Transformations of the Predictors
+
+``` {r NLTrans, echo = TRUE}
+lm.fit <- lm(medv ~ lstat + I(lstat^2), data = Boston)
+summary(lm.fit)
+plot(lstat + I(lstat^2),medv)
+
+#ANOVA comparison
+lm.fit1 <- lm(medv ~ lstat, data = Boston)
+anova(lm.fit1,lm.fit)
+#Anova tells us that this new model is much better than just medv ~ lstat
+par( mfrow = c(2, 2))
+plot(lm.fit )
+#Rv.F is pretty good, Q-Q- is as before but we may have no choice but to remove those outliers to accomodate this
+
+
+#Other polynomial functions
+lm.fit5 <- lm(medv ~ poly(lstat,5))
+summary(lm.fit5)
+#Anova again reveals that this model is much better
+anova(lm.fit,lm.fit5)
+
+#Another? Turns out x^5 is as good as it gets for lstat
+lm.fit6 <- lm(medv ~ poly(lstat,6))
+anova(lm.fit5,lm.fit6)
+
+#Already tried out log-transformation earlier so will just move on
+```
+
+## Qualitative Predictors
+
+``` {r Qual, echo = TRUE}
+head(Carseats)
+
+#Initial model
+lm.fit <- lm(Sales ~. + Income:Advertising + Price:Age, data = Carseats)
+summary(lm.fit)
+
+#check code used for the dummy variables
+attach(Carseats)
+contrasts(ShelveLoc) #creates two new predictors: shelvelocgood and shelvelocmedium --> 3 valid binary combinations (0,0) (1,0) (0,1)
+
+```
+
+
+## Lab is Complete!!
+
+
+
+
+
+
