@@ -1,8 +1,7 @@
 ---
 title: "ISLR Chapter 3 lab"
-output:
-  html_notebook: default
-  pdf_document: default
+output: 
+    html_notebook: default
 author: "Adrien Osakwe"
 ---
 
@@ -48,19 +47,27 @@ plot(lstat, medv, pch = "+")
 #Diagnostic Plots - There are 4 plots if we plot lm.fit directly
 par(mfrow = c(2,2))
 plot(lm.fit)
-# The residuals vs fitted plot shows that there is a non-linear trend that was not captured by the model
-#Scale Location plot shows certain values have an SR above sqrt(3) indicating potential outliers
-#Residuals vs Leverage shows that there are observations with both a high leverage AND SR, meaning they should probably be removed
-# The Q-Q plot has a considerable fat tail on the RHS indicating non-normality --> transforming the data could fix this - let's try it !
+# The residuals vs fitted plot shows that there is a non-linear trend 
+# that was not captured by the model
+#Scale Location plot shows certain values have an SR above sqrt(3) 
+#indicating potential outliers
+#Residuals vs Leverage shows that there are observations with both a 
+#high leverage AND SR, meaning they should probably be removed
+# The Q-Q plot has a considerable fat tail on the RHS indicating 
+# non-normality --> transforming the data could fix this - let's try it !
 
 
 #Log transformed medv linear regression
 par(mfrow = c(2,2))
 plot(lm(log(medv) ~ lstat))
-#This seems to improve a lot but not completely, still have apparent outliers to deal with
-#Will have to look into this more in the future to see how to accomodate the fat tail of the Q-Q plot
+#This seems to improve a lot but not completely, still have apparent outliers 
+#to deal with
+#Will have to look into this more in the future to see how to accomodate the fat
+#tail of the Q-Q plot
 
-#Note: can also plot these diagnostics individually with i.e. hatvalues for leverage, residuals() for residuals, and rstudent() for studentized residuals. Trying it out for leverage stats below:
+#Note: can also plot these diagnostics individually with i.e. hatvalues for 
+#leverage, residuals() for residuals, and rstudent() for studentized residuals. 
+#Trying it out for leverage stats below:
 
 #Leverage Statistics
 #hatvalues function calculates the leverage statistics for the predictors
@@ -78,7 +85,8 @@ which.max(hatvalues(lm.fit))
 attach(Boston)
 lm.fit <- lm(medv ~ lstat + age)
 summary(lm.fit)
-#It seems that R-squared barely changes upon adding age as a predictor. Age's coefficient has a significant p value but much less than lstat
+#It seems that R-squared barely changes upon adding age as a predictor. Age's 
+#coefficient has a significant p value but much less than lstat
 # The F-statistic actually drops although it is still much larger than one
 
 
@@ -93,11 +101,13 @@ library(car)
 vif(lm.fit)
 # tax and rad are pretty high relative to the others
 #nox, dis and indus are also high
-#Looking into what these variables are may give insight into why we are seeing collinearity and we can then decide which predictors to keep
+#Looking into what these variables are may give insight into why we are seeing 
+#collinearity and we can then decide which predictors to keep
 
 
 #All but some predictors in model
-#Will remove indus and age because of the high p values as well as tax given the high VIF
+#Will remove indus and age because of the high p values as well as tax given 
+#the high VIF
 lm.fit <- update(lm.fit, ~.-age)
 lm.fit <- update(lm.fit, ~.-indus)
 lm.fit <- update(lm.fit, ~.-tax)
@@ -105,7 +115,8 @@ summary(lm.fit)
 #Barely changes R-squared, RSE and F
 vif(lm.fit)
 #Also seem much lower VIF scores --> rad and tax must have been collinear 
-#One is for property tax and the other for accessibility to radial highways which facilitate access to different regions by car
+#One is for property tax and the other for accessibility to radial highways 
+#which facilitate access to different regions by car
 #Could look into this more to understand why they would be collinear
 ```
 
@@ -120,7 +131,9 @@ summary(lm.fit)
 
 #The interaction between lstat and age seems to be much more important than age
 #Let's try with others
-#lstat is important, so is its interaction with age, lets add the interaction of crime and lstat
+#lstat is important, so is its interaction with age, lets add the interaction of
+#crime and lstat
+
 lm.fit <- lm(medv ~ lstat*age + lstat*crim, data = Boston)
 summary(lm.fit)
 #Does not improve the model much... could try this out again later
@@ -139,7 +152,8 @@ anova(lm.fit1,lm.fit)
 #Anova tells us that this new model is much better than just medv ~ lstat
 par( mfrow = c(2, 2))
 plot(lm.fit )
-#Rv.F is pretty good, Q-Q- is as before but we may have no choice but to remove those outliers to accomodate this
+#Rv.F is pretty good, Q-Q- is as before but we may have no choice but to remove
+#those outliers to accomodate this
 
 
 #Other polynomial functions
@@ -166,7 +180,9 @@ summary(lm.fit)
 
 #check code used for the dummy variables
 attach(Carseats)
-contrasts(ShelveLoc) #creates two new predictors: shelvelocgood and shelvelocmedium --> 3 valid binary combinations (0,0) (1,0) (0,1)
+contrasts(ShelveLoc) 
+#creates two new predictors: shelvelocgood and 
+#shelvelocmedium --> 3 valid binary combinations (0,0) (1,0) (0,1)
 
 ```
 
