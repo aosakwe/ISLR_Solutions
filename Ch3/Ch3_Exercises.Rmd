@@ -378,5 +378,328 @@ summary(lm.fit)
 C)
 
   Both results have the same t-statistic and p-value. This is expected as both 
-  models are producing the same line (we simply inversed the roles of predictor
+  models are producing the same line (we simply inverted the roles of predictor
   and response).
+
+
+D)
+
+![Q11D Solution](Q9_1.jpeg)0
+
+``` {r Q11D, echo = TRUE}
+true_t <- 18.73
+test_t <- (sqrt(length(x)-1)*sum(x %*% y))/(sqrt(sum(y**2)*sum(x**2)-sum(x %*% y)**2))
+true_t == round(test_t,2)
+```
+E)
+
+  Based on the derived formula, and that there are n observation of x and n 
+  observations of y, we know that the t-statistic is the same for regressions
+  of x onto y and y onto x. This is because the formula shows that the values of
+  x and y undergo the exact same transformations in the formula whether they are
+  the response or the predictor. Therefore their exact role in the regression is
+  irrelevant as it will lead to the same value.
+  
+F)
+  
+``` {r Q11F, echo = TRUE}
+set.seed(1)
+x <- rnorm(100)
+y <- 2*x +rnorm(100)
+lm.fit <- lm(x ~ y)
+lm.fit2 <- lm(y ~ x)
+round(summary(lm.fit)$coefficients[,3][2],2) == round(summary(lm.fit2)$coefficients[,3][2],2)
+
+```
+
+### 12)
+
+A)
+
+  The equation for the coefficients are:
+  
+    y onto x:
+    
+      Sum(x %*% y)/sum(x**2)
+    
+    x onto y:
+    
+      Sum(y %*% x)/sum(y**2)
+      
+  Based on the above, the conditions are the same if x and y are equal.
+
+B)
+  
+``` {r Q12B, echo = TRUE}
+set.seed(1)
+x <- rnorm(100)
+y <- 2*x +rnorm(100)
+lm.fit <- lm(x ~ y)
+lm.fit2 <- lm(y ~ x)
+round(lm.fit$coefficients[2],2) == round(lm.fit2$coefficients[2],2)
+```
+C)
+
+``` {r Q12C, echo = TRUE}
+set.seed(1)
+x <- rnorm(100)
+y <- x
+lm.fit <- lm(x ~ y)
+lm.fit2 <- lm(y ~ x)
+round(lm.fit$coefficients[2],2) == round(lm.fit2$coefficients[2],2)
+```
+
+
+
+
+### 13)
+
+``` {r Q13A-C, echo = TRUE}
+set.seed(1)
+
+x <- rnorm(100)
+eps <- rnorm(100,0,0.25)
+y <- -1 + 0.5*x + eps
+
+```
+
+C)
+  
+  Y has a length of 100 observations, with B0 as -1 and B1 as 0.5.
+
+D)
+
+  Scatterplot (see below) shows a postive linear correlation between x and y.
+  
+``` {r Q13D, echo = TRUE}
+plot(x,y)
+```
+
+
+E)
+  
+  The least squares linear model (below) finds coefficients that closely 
+  ressemble their true values.
+``` {r Q13E, echo = TRUE}
+lm.fit <- lm(y ~ x)
+summary(lm.fit)
+```
+
+F)
+
+  We can see below that the model seems to fit the data very well as it matches
+  the population regression line.
+
+``` {r Q13F, echo = TRUE}
+plot(x,y)
+abline(lm.fit, col = "red")
+abline(-1,0.5, col = "blue")
+legend("topleft",c("Least Squares", "Population Regression"), col = c("red", "blue"), lty = c(1,1))
+```
+G)
+  Running anova on the two models indicates that there is no significant 
+  improvement when including X**2 in the model.
+``` {r Q12G, echo = TRUE}
+lm.fit2 <- lm(y ~ x + I(x**2))
+anova(lm.fit,lm.fit2)
+```
+
+H)
+
+  Reduced the noise of data by generating the epsilon vector using a normal
+  distribution with a smaller standard deviation.
+  
+  This, as expected, generates a model that matches the trend of the test data
+  much more than the model used on the noisier data.
+``` {r Q13H, echo = TRUE}
+set.seed(1)
+x <- rnorm(100)
+eps <- rnorm(100,0,0.05)
+y <- -1 + 0.5*x + eps
+lm.fit2 <- lm(y ~ x)
+plot(x,y)
+abline(lm.fit2, col = "red")
+abline(-1,0.5, col = "blue")
+legend("topleft",c("Least Squares", "Population Regression"), col = c("red", "blue"), lty = c(1,1))
+```
+
+I)
+
+  Increasing standard deviation in the normal distribution used for eps 
+  increases noise.
+  
+  As expected, there is much more deviation between the observed responses and
+  what our model predicts.
+``` {r Q13I, echo = TRUE}
+set.seed(1)
+x <- rnorm(100)
+eps <- rnorm(100,0,0.5)
+y <- -1 + 0.5*x + eps
+lm.fit3 <- lm(y ~ x)
+plot(x,y)
+abline(lm.fit3, col = "red")
+abline(-1,0.5, col = "blue")
+legend("topleft",c("Least Squares", "Population Regression"), col = c("red", "blue"), lty = c(1,1))
+```
+J)
+
+  As seen below, the range of our CI increases with noise for beta1.
+  
+``` {r Q13J, echo = TRUE}
+confint(lm.fit)
+confint(lm.fit2)
+confint(lm.fit3)
+```
+
+
+### 14) 
+
+A)
+  
+  The model has the form:
+    
+    y = 2+ 2x1 + 0.3x2 + e
+  
+  b0 = 2, b1 = 2, b2 = 0.3
+
+``` {r Q14A, echo = TRUE}
+set.seed(1)
+x1 <- runif(100)
+x2 <- 0.5*x1 +rnorm(100)/10
+y <- 2 + 2*x1 + 0.3*x2 +rnorm(100)
+```
+
+B)
+
+  x1 and x2 share a positive correlation (every unit increase in x1 increases
+  x2 by 0.5 units)
+  
+``` {r Q14B, echo = TRUE}
+plot(x1,x2)
+```
+
+C)
+
+  F-statistic indicates that we can reject the null hypothesis and conclude that
+  there is a link between the variables and y. The p values from the t-stats 
+  tell us that we can reject the null hypothesis for x1 but must accept it for
+  x2 as its p-value is greater than 0.05.
+``` {r Q14C, echo = TRUE}
+lm.fit <- lm(y ~ x1 + x2)
+summary(lm.fit)
+```
+
+D)
+  
+  Removing x2 barely changes R^2 and the RSE and causes the F-statistic to 
+  increase. We can still reject the null hypothesis that b1 = 0.
+``` {r Q14D, echo = TRUE}
+lm.fit2 <- lm(y ~ x1)
+summary(lm.fit2)
+```
+
+
+E)
+
+  When we use x2 instead of x1, we can also reject the null hypothesis for b1,
+  giving more evidence that these two variables are collinear.
+``` {r Q14E, echo = TRUE}
+lm.fit3 <- lm(y ~ x2)
+summary(lm.fit3)
+```
+
+F)
+
+  At first glance, one would say that the results are contradictory. However,
+  given what we know about collinearity and that we know x2 depends on x1, these
+  results make sense as x2 provides little information to the model when x1 is
+  already present but is meaningful if it is not. 
+
+G)
+
+  This mismeasured data point now masks the importance of x1 and unmasks that of
+  x2 in the MLR.
+  
+  Diagnostics of the three new models show the observation to be an outlier and
+  /or a high leverage point.
+
+``` {r Q14G, echo = TRUE}
+x1 <- c(x1,0.1)
+x2 <- c(x2,0.8)
+y <- c(y,6)
+
+
+lm.fit4 <- lm(y ~ x1 + x2)
+summary(lm.fit4)
+lm.fit5 <- lm(y ~ x2)
+lm.fit6 <- lm(y ~ x1)
+par(mfrow = c(2,2))
+plot(lm.fit4)
+
+par(mfrow = c(2,2))
+plot(lm.fit5)
+
+par(mfrow = c(2,2))
+plot(lm.fit6)
+```
+
+
+
+
+
+### 15)
+
+
+A)
+  
+  Based on the summary stats, all of the variables can have their null 
+  hypothesis rejected except for the predictor "chas" for which the p-values 
+  for the corresponding t and f statistics are above 0.05.
+  
+  The predictor "rad" explained the most variance.
+
+``` {r Q15A, echo = TRUE}
+models <- lapply(Boston[,-1],function(a) lm(crim ~ a,data = Boston))
+
+lapply(models,function(a) summary(a))
+
+```
+
+B)
+
+  Based on the summary stats, we can reject the null hypothesis for the 
+  coefficients of: zn,dis,rad and medv.
+``` {r Q15B, echo = TRUE}
+mlr.fit <- lm(crim ~., data = Boston)
+summary(mlr.fit)
+```
+C)
+  For most predictors, our plot is showing a similar coefficient. However, one
+  predictor, nox, has drastically different coefficients. This is an
+  indicator of a possible interaction effect with nox and another variable. As 
+  the slr only consider the effect of the one predictor, and the mlr considers
+  the effect of one predictor at fixed values of the other predictors, the model
+  would not have been able to account for this interaction as is. We could look
+  at a matrix of correlations to see if there is additional evidence there (need
+  to remove chas which is a qualitative predictor).Sure enough there are some
+  high correlations for some of these predictors.
+
+``` {r Q15C, echo = TRUE}
+x <- sapply(models, function(a) summary(a)$coefficients[2,1])
+y <- summary(mlr.fit)$coefficients[-1,1]
+plot(x,y)
+text(x,y, labels = names(models))
+
+cor(Boston[-c(1,4)])
+```
+
+
+D)
+
+  Briefly skimming over the results shows certain predictors to have polynomial
+  coefficients whose null hypothesis were rejected. Some of these are nox, indus
+  , ptratio and medv. 
+``` {r Q15D, echo = TRUE}
+models2 <- lapply(Boston[,-1],function(a) lm(crim ~ a + I(a**2) + I(a**3),data = Boston))
+lapply(models2,function(a) summary(a))
+```
