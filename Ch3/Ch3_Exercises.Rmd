@@ -130,5 +130,253 @@ setwd(getwd())
 
 
 # Applied
+
+### Packages
+
+``` {r packages, echo = TRUE}
+library(ISLR2)
+```
+
+### 8)
+
+A)
+
+ i) The summary of lm.fit shows that there is a relationship between mpg and
+     horsepower (very small p-value).
+ 
+ ii) According to the R^2 value, horsepower accounts for 60% of the variance in 
+     mpg.
+     Note: I saw in the solutions manual afterwards that we can also check the
+     percentage error (RSE/mean response) to evaluate relationship strength.
+
+iii) Negative relationship
+ 
+ iv) Prediction: mpg ~ 24.47, CI = [23.97-24.96], PI = [14.81-34.12] 
+ (rounded to 2 d.p.)
+
+``` {r Q8, echo = TRUE}
+# Part A
+lm.fit <- lm(mpg ~ horsepower, data = Auto)
+summary(lm.fit)
+predict(lm.fit, data.frame(horsepower = 98), interval = "confidence")
+predict(lm.fit, data.frame(horsepower = 98), interval = "prediction")
+```
+
+B) 
   
+  See plot below
+
+``` {r Q8B, echo = TRUE}
+# Part B
+attach(Auto)
+plot(horsepower,mpg) + title("Part B - Mpg vs.Horsepower")
+abline(lm.fit, col = "blue")
+```
+
+C)
   
+  Based on the residuals v. fitted value plot, we can see that the true 
+  relationship is not linear, indicating that some for of transformation will be
+  required to best fit the data. There is not a large fat tail in the Q-Q plot
+  which indicates that the responses are not very non-normal. The remaining
+  plots highlight one or two observations that are outliers.
+  
+``` {r Q8C, echo = TRUE}
+# Part C
+par(mfrow = c(2,2))
+plot(lm.fit) 
+```
+ 
+### 9)
+
+A) 
+
+  See plot below.
+  
+``` {r Q9A, echo = TRUE}
+#Part A
+pairs(Auto)
+```
+
+B)
+  
+  See matrix below.
+  
+``` {r Q9B, echo = TRUE}
+#Part B
+mat.cor <- cor(Auto[,!(names(Auto) == "name")])
+data.frame(mat.cor)
+```
+
+C)
+  
+  i) The F-statistic is below 0.05 which confirms we can reject the null
+  hypothesis. 
+  
+  ii) Based on the p-values, only some of the predictors are 
+  shown to have a relationship with the response. These are: displacement, 
+  weight, year, and origin.
+  
+  iii)The coefficient for year suggests that as the year increases, the mpg
+  increases. This is reassuring to see as I would be concerned if more 
+  technologically advanced cars were incapable of a better mileage than a model
+  T... 
+
+
+``` {r Q9C, echo = TRUE}
+#Part C
+lm.fit <- lm(mpg ~ . - name, data = Auto)
+summary(lm.fit)
+```
+
+D)
+
+  The residuals vs leverage plot shows observation 14 to be a considerable
+  outlier compared to the rest of the dataset. Observations 323,326 and 327 
+  are also shown to be outliers based on the other three plots.
+  The residuals vs. fitted plot seems to have a very light non-linearity. Q-Q 
+  plot shows as fat tail indicating some of the data is non-normal.
+
+``` {r Q9D, echo = TRUE}
+#Part D
+par(mfrow = c(2,2))
+plot(lm.fit)
+```
+
+E)
+  
+  Checked for interactions effects between cylinders and weight as well as 
+  horsepower and acceleration. Both interactions are shown to have a significant
+  relationship. In addition this model reduces RSE and increases R^2. An anova
+  analysis reveals that this model is a significant improvement of the previous 
+  one.
+
+``` {r Q9E, echo = TRUE}
+#Part E
+lm.fit2 <- lm(mpg ~ . - name + cylinders:weight + horsepower:acceleration, data = Auto)
+summary(lm.fit2)
+anova(lm.fit,lm.fit2)
+```
+
+F)
+  Log-transforming mpg seems ot better fit the data.RSE is very small and the
+  residuals v. fitted plot shows no trend. A square root transform also reduces
+  R^2, however the non-linear trend in the residuals vs. fitted plot shows the
+  model does not fit the data as well as the log transformation.
+  See plots below
+  
+``` {r Q9F-log, echo = TRUE}
+#Part F
+log.fit <- lm(log(mpg) ~ . - name, data = Auto)
+summary(log.fit)
+par(mfrow = c(2,2))
+plot(log.fit)
+```
+
+``` {r Q9F-sqrt, echo = TRUE}
+sqrt.fit <-lm(sqrt(mpg) ~ . - name, data = Auto)
+summary(sqrt.fit)
+par(mfrow = c(2,2))
+plot(sqrt.fit)
+```
+
+### 10)
+A)
+``` {r Q10A, echo = TRUE}
+lm.fit <- lm(Sales ~ Price + Urban + US, data = Carseats)
+summary(lm.fit)
+```
+
+B)
+  
+  See above for the summary statistics of the model.
+  
+  Based on the summary, the F-statistic indicates that we can reject then null
+  hypothesis that all coefficients are 0. The individual p-values show that
+  Urban is the only predictor to not be related to sales. 
+  The coefficient of Price tells us that a one unit increase in price will 
+  reduce sales by 0.05 units. The coefficient of US tells us that being in the
+  US increases sales by 1.2 units. 
+  
+C)
+  
+  If in the US: Sales = 14.2 -0.05Price 
+  Else: Sales = 13 - 0.05Price
+
+D)
+  
+  As mentioned in B, the null hypothesis can be rejected for Price and US.
+
+E)
+  
+``` {r Q10E, echo = TRUE}
+lm.fit2 <- lm(Sales ~ Price + US, data = Carseats)
+summary(lm.fit2)
+```
+F)
+  
+  The summary stats for both models tell us that the predictors in both cases
+  only account for about 23% of the variance in sales. Based off this alone,
+  we will likely have to use other predictors and/or interaction effects to have
+  a better fit.
+
+G)
+
+``` {r Q10G, echo = TRUE}
+confint(lm.fit2)
+```
+  
+H)
+  
+  The diagnostics show some evidence for one outlier (377) and one case of high 
+  leverage.
+``` {r Q10H, echo = TRUE}
+par(mfrow = c(2,2))
+plot(lm.fit2)
+```
+
+
+### 11) 
+
+A)
+
+  Coefficients: x
+  
+  Estimate      SE    t value Pr(>|t|)  
+  
+  1.9939     0.1065   18.73   <2e-16 
+  
+  These results show that the null hypothesis can be rejected as the p-value is
+  below 0.05.
+
+``` {r Q11A, echo = TRUE}
+set.seed(1)
+x <- rnorm(100)
+y <- 2*x +rnorm(100)
+lm.fit <- lm(y ~ x + 0)
+summary(lm.fit)
+```
+
+B)
+
+  Coefficients: y
+  
+  Estimate Std. Error t value Pr(>|t|)    
+  
+  0.39111    0.02089   18.73   <2e-16 
+
+  Much like before, we can reject the null hypothesis as p-value is below 0.05.
+
+``` {r Q11B, echo = TRUE}
+set.seed(1)
+x <- rnorm(100)
+y <- 2*x +rnorm(100)
+lm.fit <- lm(x ~ y + 0)
+summary(lm.fit)
+```
+
+C)
+
+  Both results have the same t-statistic and p-value. This is expected as both 
+  models are producing the same line (we simply inversed the roles of predictor
+  and response).
