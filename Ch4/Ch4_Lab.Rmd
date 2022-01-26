@@ -1,0 +1,154 @@
+---
+title: "Ch4_Lab"
+author: "Adrien Osakwe"
+output: html_notebook
+---
+
+## Stock Market Data
+
+Working with the *Smarket* data set in the ISLR2 package.
+Looking to use data from 1250 days of stock indices to predict stock price direction.
+ 
+``` {r Smarket, echo = TRUE}
+library(ISLR2)
+names(Smarket)
+dim(Smarket)
+summary(Smarket)
+
+## Generate correlation matrix using the quantitative variables
+cor(Smarket[,-9])
+# A quick scan of the matrix indicates a correlation between the year and the
+#Volume
+attach(Smarket)
+boxplot(Volume ~ Year)
+```
+
+
+## Logistic Regression
+
+Using log regression to predict direction with lag[1:5] and volume
+
+``` {r log-reg, echo = TRUE}
+#Use glm() with family = binomial to cal log-reg 
+glm.fits <- glm(Direction ~ Lag1 + Lag2 + Lag3 + Lag4 + Lag5 + Volume, data = 
+                  Smarket, family = binomial)
+
+summary(glm.fits)
+#smallest p-value is for lag1. as b1 is negative, a positive return lag1 would
+#predict and positive return today
+summary(glm.fits)$coef
+
+## Running predict() here requires us to set the type parameter to "response" to
+# output a posterior probability
+contrasts(Direction) #this informs us that the probability is for today being Up
+
+glm.probs <- predict(glm.fits, type = "response")
+glm.probs[1:10]
+#Hm, it's all 50/50... de la poudre de perlinpinpin!
+
+#Can then convert P(x|y) into labels based on their values
+glm.pred <- rep("Down",1250)
+glm.pred[glm.probs > 0.5] <- "Up"
+#Plot predictions against training values
+table(glm.pred,Direction)
+#Calculate Model Accuracy for training data
+train_error <- (145 + 507)/1250
+#Or do
+mean(glm.pred == Direction)
+## ~50% accuracy on the training data... oh boy
+
+##Creating a test data set
+train <- ( Year < 2005)
+Smarket.2005 <- Smarket[!train ,]
+dim (Smarket.2005)
+Direction.2005 <- Direction[!train]
+
+#repeat log-red with data from before 2005
+glm.fits1 <- glm(Direction ~ Lag1 + Lag2 + Lag3 + Lag4 + Lag5 + Volume, data = 
+                  Smarket, family = binomial, subset = train)
+glm.probs1 <- predict(glm.fits1, Smarket.2005, type = "response")
+glm.pred1 <- rep("Down", 252)
+glm.pred1[glm.probs1 > 0.5] <- "Up"
+table(glm.pred1,Direction.2005)
+mean(glm.pred1 == Direction.2005)
+mean(glm.pred1 != Direction.2005)
+#Model is worse than a guess 0o0
+
+
+#Rebuild model using less parameters
+#repeat log-red with data from before 2005
+glm.fits2 <- glm(Direction ~ Lag1 + Lag2, data = 
+                  Smarket, family = binomial, subset = train)
+glm.probs2 <- predict(glm.fits2, Smarket.2005, type = "response")
+glm.pred2 <- rep("Down", 252)
+glm.pred2[glm.probs2 > 0.5] <- "Up"
+table(glm.pred2,Direction.2005)
+mean(glm.pred2 == Direction.2005)
+# based on this confusion matrix one could develop a trading strategy 
+# (don't necessarily need a perfect model, just need one that improves your 
+#chances)
+```
+
+
+### Linear Discriminant Analysis
+
+``` {r LDA, echo = TRUE}
+
+##LDAs are fit with the lda function
+library(MASS)
+lda.fit <- lda(Direction ~ Lag1 + Lag2, data = Smarket, subset = train)
+lda.fit
+plot(lda.fit)
+
+lda.pred <- predict(lda.fit, Smarket.2005)
+names(lda.pred)
+lda.class <- lda.pred$class
+table(lda.class,Direction.2005)
+mean(lda.class == Direction.2005)
+
+#Can recreate the labels by applying a 50% threshold to the posterior 
+#probabilities
+## May want to change posterior threshold depending on what bias we see in test
+#results. Too many FP? Could try increasing the threshold
+```
+
+
+### Quadratic Discriminant Analysis
+
+``` {r QDA, echo = TRUE}
+## Called with the qda() function
+
+qda.fit <- qda(Direction ~ Lag1 + Lag2, data = Smarket, subset = train)
+qda.fit
+
+qda.class <- predict(qda.fit, Smarket.2005)$class
+table(qda.class, Direction.2005)
+#At first glance we would say that the model is good at predicting Ups However, there is a very high FP rate (almost 3/4 of true Downs are predicted to be Ups), which, given that this model would be used to recommend investments is not great..
+mean(qda.class == Direction.2005)
+#Since the overall accuracy is 60% it's still much better than the previous models but is still a concern in my opinion.
+```
+
+
+### Naive Bayes
+
+``` {r NB, echo = TRUE}
+#Need to load the *e1071* library which contains the Naive Bayes method for R
+library(e1071)
+
+nb.fit <- naiveBayes(Direction ~ Lag1 + Lag2, data = Smarket, subset = train)
+
+nb.fit
+
+
+nb.class <- predict(nb.fit, Smarket.2005) 
+table(nb.class, Direction.2005)
+mean(nb.class == Direction.2005)
+#can also generate the probabilities for each prediction
+nb.pred <- predict(nb.fit, Smarket.2005, type = "raw")
+nb.pred[1:5,]
+```
+
+
+## K-Nearest Neighbours
+
+``` {r KNN, echo = TRUE}
