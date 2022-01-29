@@ -1,0 +1,17 @@
+---
+title: "Chapter 4 Exercises"
+author: "Adrien Osakwe"
+output: html_notebook
+---
+
+## Conceptual
+
+1)
+
+![Q1 Image](./Q1.jpeg)
+2)
+
+![Q2 Image](./Q2.jpeg)
+3)
+
+![Q3 Image](./Q3.jpeg)
