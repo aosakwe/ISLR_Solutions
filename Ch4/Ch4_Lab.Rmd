@@ -1,7 +1,7 @@
 ---
 title: "Ch4_Lab"
 author: "Adrien Osakwe"
-output: html_notebook
+output: pdf_document
 ---
 
 ## Stock Market Data
@@ -151,4 +151,134 @@ nb.pred[1:5,]
 
 ## K-Nearest Neighbours
 
+
 ``` {r KNN, echo = TRUE}
+#Performed by using the knn() function
+
+#Need a matrix composed of predictors from training data (train.x)
+#A matrix with predictors from data we are trying to predict (test.xt)
+#A vector with class labels for train.x (train.Direction)
+#K, the number of NN to use in classifier
+library(class)
+library(ISLR2)
+
+#Setup test data
+attach(Smarket)
+train <- ( Year < 2005)
+train.x <- cbind(Lag1,Lag2)[train,]
+test.x <- cbind(Lag1,Lag2)[!train,]
+train.Direction <- Direction[train]
+Direction.2005 <- Direction[!train]
+set.seed(1)
+knn.pred <- knn(train.x,test.x, train.Direction, k = 1)
+table(knn.pred,Direction.2005)
+#50% accuracy with k = 1, not great
+mean(knn.pred == Direction.2005)
+
+#K = 3
+knn.pred2 <- knn(train.x,test.x, train.Direction, k = 3)
+table(knn.pred2,Direction.2005)
+mean(knn.pred2 == Direction.2005)
+
+##Overall the QDA model had the highest accuracy on this data set 
+#could still change what parameters we use in the model later to see if this brings us above the 60%
+```
+
+KNN on the caravan data set
+
+``` {r KNN2, echo = TRUE}
+dim(Caravan)
+attach(Caravan)
+summary(Purchase)
+
+#Scaling all the predictors to prevent any bias due to different magnitudes from affecting knn prediction
+standardized.X <- scale(Caravan[,-86])
+
+#Training subsets
+test <- 1:1000
+train.X1 <- standardized.X[-test,]
+test.X1 <- standardized.X[test,]
+train.Y1 <- Purchase[-test]
+test.Y1 <- Purchase[test]
+
+set.seed(1)
+knn.pred3 <- knn(train.X1,test.X1,train.Y1, k = 1)
+mean(test.Y1 != knn.pred3)
+
+
+##The error rate looks good here, but because it is higher than the proportion of Yes in the training data, we could get a lower error rate by just predicting everything as No!
+mean(test.Y1 != "No")
+
+table(knn.pred3,test.Y1)
+(9)/(66+9)
+#12% success rate if you only sell insurance to people who are predicted to buy it
+# double the odds of just asking everyone (6%)
+knn.pred4 <- knn(train.X1,test.X1,train.Y1, k = 3)
+table(knn.pred4,test.Y1)
+5/24
+#K = 3 improves this even more!
+knn.pred5 <- knn(train.X1,test.X1,train.Y1, k = 5)
+table(knn.pred5,test.Y1)
+4/15
+#Even higher! unfortunately this comes at the cost of only suggesting 15 candidate buyers...
+
+
+##Trying with a logistic regression
+glm.fits3 <- glm(Purchase ~ . , data = Caravan, subset = -test, family = binomial)
+glm.probs3 <- predict(glm.fits3,Caravan[test,],type = "response")
+glm.pred3 <- rep("No",1000)
+glm.pred3[glm.probs3 > 0.5] <- "Yes"
+table(glm.pred3,test.Y1)
+#All yes predictions are wrong!
+glm.pred4 <- rep("No",1000)
+glm.pred4[glm.probs3 > 0.25] <- "Yes"
+table(glm.pred4,test.Y1)
+#Now have a 33% success rate which is the best we have seen so far
+```
+
+
+### Poisson Regression
+
+``` {r PR, echo = TRUE}
+attach(Bikeshare)
+dim(Bikeshare)
+names(Bikeshare)
+
+#Testing linear regression
+mod.lm <- lm(bikers ~ mnth + hr + workingday + temp + weathersit, data = Bikeshare)
+summary(mod.lm)
+
+#Changing data values for mnth and hr
+contrasts(Bikeshare$hr) <- contr.sum(24)
+contrasts(Bikeshare$mnth) <- contr.sum(12)
+mod.lm2 <- lm(bikers ~ mnth + hr + workingday + temp + weathersit, data = Bikeshare)
+summary(mod.lm2)
+
+## Showing that both coding approaches do not change the model's predictions
+all.equal(predict(mod.lm), predict(mod.lm2))
+
+## Get month coefficients
+coef.months <- c(coef(mod.lm2)[2:12], -sum(coef(mod.lm2[2:12])))
+plot(coef.months, xlab = "Month", ylab = "Coefficient", xaxt = "n", col = "blue", pch = 19, type = "o")
+axis(side = 1,at = 1:12, labels = c("J","F","M","A","M","J","J","A","S","O","N","D"))
+
+
+## now fitting a poisson regression on the data instead
+
+mod.pois <- glm(bikers ~ mnth + hr + workingday + temp + weathersit, data = Bikeshare, family = poisson)
+summary(mod.pois)
+
+coef.months2 <- c(coef(mod.pois)[2:12], -sum(coef(mod.pois[2:12])))
+plot(coef.months2, xlab = "Month", ylab = "Coefficient", xaxt = "n", col = "blue", pch = 19, type = "o")
+axis(side = 1,at = 1:12, labels = c("J","F","M","A","M","J","J","A","S","O","N","D"))
+
+coef.hr <- c(coef(mod.pois)[13:35], -sum(coef(mod.pois[13:35])))
+plot(coef.hr, xlab = "Hour", ylab = "Coefficient", col = "red", pch = 18, type = "o")
+
+
+plot(predict(mod.lm2),predict(mod.pois, type = "response"))
+abline(0,1,col = 2, lwd = 3)
+```
+
+
+### Lab is complete
