@@ -15,3 +15,32 @@ output: html_notebook
 3)
 
 ![Q3 Image](./Q3.jpeg)
+
+
+
+4)
+
+![Q4_1](./Q4_1.jpeg)
+
+![Q4_2](./Q4_2.jpeg)
+
+5)
+
+a) we expect QDA to perform better on the training set and LDA on the test set.
+This is because QDA is more flexible and will better fit the noise of the training set. However, this will cause overfitting, leading the LDA generating a better result in the test set.
+
+b) If non-linear, we expect QDA to outperform LDA in both cases as it will not be disadvantaged by the bias LDA will have given its assumption of linearity. The increased flexibility of QDA will therefore allow a better fit and generate a decision boundary closest to the BDB.
+
+c) We expect this to improve QDA as the increased number of samples will reduce the contribution of noise to the model fitting and reduce the risk of overfitting.
+
+d) False. This may only work if there is a sufficient number of observations to prevent overfitting with the QDA approach. If this is not the case, QDA will most likely start fitting the noise of the data whereas LDA will not have this issue due to its reduced flexibility.
+ 
+
+6) 
+
+![Q6_Image](./Q6.jpeg)
+
+
+
+
+
