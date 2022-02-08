@@ -66,9 +66,23 @@ calculate Pk(x = 4) with k = Yes using LDA for p = 1
   b)
     0.16/0.84 = 0.19
 
-10)
+10) Incomplete, need to confirm this answer
+
+![Partial Q10](./Q10.jpeg)
+
+11) Need to come back to this
   
-  
+12)
+
+![Q12 a-c](./Q12.jpeg)
+
+
+![Q12 d](./Q12_d.jpeg)
+
+
+## Applied
+
+
     
        
 
