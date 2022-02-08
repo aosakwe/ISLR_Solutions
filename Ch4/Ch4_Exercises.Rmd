@@ -40,7 +40,37 @@ d) False. This may only work if there is a sufficient number of observations to 
 
 ![Q6_Image](./Q6.jpeg)
 
+7)
 
+P(Yes | X = 4)
+
+--> As X is normally distributed, we can use LDA with p = 1
+pi_yes = 0.8
+mean_yes = 10
+mean_no = 0
+var = 36
+
+calculate Pk(x = 4) with k = Yes using LDA for p = 1
+--> pk(4) = 0.752
+
+8)
+  As the KNN classifier uses k = 1, the training error rate is 0% as the classifier
+  simply returns the same observation as the NN. Therefore, for the average to be
+  18%, the test error rate must be 36%, meaning the logistic regression model is more accurate.
+  
+9) 
+
+  a) 
+    odds =  p(x)/p(!x)
+    0.27
+  b)
+    0.16/0.84 = 0.19
+
+10)
+  
+  
+    
+       
 
 
 

@@ -1,2 +1,6 @@
+.gitignore
+
 token
 .Rhistory
+.Rproj.user/
+ISLR_Practice.Rproj
