@@ -1,7 +1,7 @@
 ---
 title: "Chapter 4 Exercises"
 author: "Adrien Osakwe"
-output: html_notebook
+output: pdf_document
 ---
 
 ## Conceptual
@@ -15,9 +15,6 @@ output: html_notebook
 3)
 
 ![Q3 Image](./Q3.jpeg)
-
-
-
 4)
 
 ![Q4_1](./Q4_1.jpeg)
@@ -83,8 +80,288 @@ calculate Pk(x = 4) with k = Yes using LDA for p = 1
 ## Applied
 
 
+Q13)
+
+  a) 
+    Correlation matrix shows a strong correlation between volume and year in this data set.
+    Box plots of Volume vs. Year seem to agree with this observation. All other correlations are considerably small in comparison.
     
+  b)
+    The logistic regression finds that the null hypothesis can only be rejected for the Lag2 parameter.
+    
+  c)
+    Using 0.50 probability as the threshold, the model has a 56% accuracy rate with the training data. The confusion matrix tells us that our model seems to generate too many false positive (Up predictions) as it is fairly good at identifying Ups as Ups, but bad at identifying the Downs as Downs. 
+    
+  d)
+    Modifying the model to only use Lag2 as a predictor yields an accuracy of 62%. Again, the model still has a hard time correctly identifying Down periods. Although we would be able to predict all the Up days, all the money we make would probably be lost in the FP Down days. 
+  
+  e)
+    LDA Approach yields 62.5% accuracy. 
+  f)
+    QDA simply labels everything as Up...
+  g)
+    KNN with k = 1 gives 50% accuracy. Good to note that its Down prediction is better than the others.
+  h)
+    Also labels everything as up..
+  i)
+    Based on these results, I would go with either the logistic or LDA model. However, I would tweak the thresholds in both to see how much we can minimize the FP rate in both. The model with parameters that can best reduce the FP and maintain a > 50% accuracy would be the best choice.
+    
+``` {r, Q13}
+
+library(ISLR2)
+
+cor(Weekly[,-9])
+attach(Weekly)
+boxplot(Volume ~ Year)
+
+#Log regression
+
+log.fit1 <- glm(Direction ~ Lag1 + Lag2 + Lag3 + Lag4 + Lag5 + Volume, data =
+Weekly, family = binomial)
+summary(log.fit1)
+
+#Confusion matrix
+log.prob1 <- predict(log.fit1, type = "response")
+log.pred1 <- rep("Down",length(log.prob1))
+log.pred1[log.prob1 > 0.5] <- "Up"
+table(log.pred1,Direction)
+mean(log.pred1 == Direction)
+
+#Create training data set and limit model to Lag2
+train <- Weekly$Year %in% c(1990:2008)
+test.weekly <- Weekly[!train,]
+log.fit2 <- glm(Direction ~ Lag2, data =
+Weekly, family = binomial,subset = train)
+
+log.prob2 <- predict(log.fit2, test.weekly, type = "response")
+log.pred2 <- rep("Down",length(log.prob2))
+log.pred2[log.prob2 > 0.5] <- "Up"
+table(log.pred2,test.weekly$Direction)
+mean(log.pred2 == test.weekly$Direction)
+
+
+##LDA
+library(MASS)
+lda.fit <- lda(Direction ~ Lag2, data =
+Weekly,subset = train)
+lda.pred <- predict(lda.fit,test.weekly)
+table(lda.pred$class,test.weekly$Direction)
+mean(lda.pred$class == test.weekly$Direction)
+
+
+##QDA
+qda.fit <- qda(Direction ~ Lag2, data =
+Weekly,subset = train)
+qda.pred <- predict(qda.fit,test.weekly)
+table(qda.pred$class,test.weekly$Direction)
+mean(qda.pred$class == test.weekly$Direction)
+
+## KNN K = 1
+library(class)
+train.lag <- as.matrix( Lag2[train])
+test.lag <- as.matrix(Lag2[!train])
+set.seed(1)
+knn.pred <- knn(train.lag,test.lag,Direction[train], k = 1)
+table(knn.pred,Direction[!train])
+mean(knn.pred == Direction[!train])
+
+
+##Naive Bayes
+library(e1071)
+
+nb.fit <- naiveBayes(Direction ~ Lag2, data =
+Weekly,subset = train)
+nb.pred <- predict(nb.fit, Weekly[!train,])
+table(nb.pred, Direction[!train])
+
+
+#Modifying parameters
+#LR  with p > 0.6
+log.pred3 <- rep("Down",length(log.prob2))
+log.pred3[log.prob2 > 0.4] <- "Up"
+table(log.pred3,Direction[!train])
+mean(log.pred3 == Direction[!train])
+
+#KNN
+knn.pred2 <- knn(train.lag,test.lag,Direction[train], k =3)
+table(knn.pred2,Direction[!train])
+mean(knn.pred2 == Direction[!train])
+```
        
+14) 
+
+  b)
+  
+    Based on the pairs() plot, horsepower and weight seem to be the best predictors of mpg01.
+  
+  c)
+  
+  d)
+  
+    LDA model has an 88% accuracy (12% error rate).
+  
+  e)
+    
+    QDA model has 87% accuracy (13% error rate).
+    
+  f)
+    
+    Logistic regression with a threshold of 50% gives an accuracy of 88.5%.
+    
+  g)
+  
+    Same as above
+  
+  h)
+  
+    K = 10 gives an accuracy of 89%. This tops all the previous models.
+    
+    
+
+``` {r, Q14}
+attach(Auto)
+Auto$mpg01 <- ifelse(Auto$mpg > median(Auto$mpg),1,0)
+pairs(Auto)
+Auto$train <- sample(c(TRUE,FALSE),nrow(Auto),replace = TRUE)
+train <- Auto[Auto$train,]
+test <- Auto[!Auto$train,]
+
+par(mfrow = c(1,2))
+boxplot(weight ~Auto$mpg01)
+boxplot(horsepower ~ Auto$mpg01)
+##LDA
+library(MASS)
+
+lda.fit1 <- lda(mpg01 ~ weight + horsepower, data =
+Auto,subset = Auto$train)
+lda.pred1 <- predict(lda.fit1,test)
+table(lda.pred1$class,test$mpg01)
+mean(lda.pred1$class == test$mpg01)
+
+##QDA
+
+qda.fit1 <- qda(mpg01 ~ weight + horsepower, data =
+Auto,subset = Auto$train)
+qda.pred1 <- predict(qda.fit1,test)
+table(qda.pred1$class,test$mpg01)
+mean(qda.pred1$class == test$mpg01)
+
+
+##LR
+
+log.fit3 <- glm(mpg01 ~ weight + horsepower, data =
+Auto,subset = Auto$train, family = binomial)
+log.prob3 <- predict(log.fit3, test, type = "response")
+log.pred3 <- ifelse(log.prob3 > 0.5,1,0)
+table(log.pred3,test$mpg01)
+mean(log.pred3 == test$mpg01)
+
+
+##NB
+library(e1071)
+
+nb.fit1 <- naiveBayes(mpg01 ~ weight + horsepower, data =
+Auto,subset = Auto$train)
+nb.pred1 <- predict(nb.fit1, test)
+table(nb.pred1, test$mpg01)
+mean(nb.pred1 == test$mpg01)
+
+##KNN
+library(class)
+knn.pred3 <- knn(train[,c("weight","horsepower")],test[,c("weight","horsepower")],train$mpg01, k = 10)
+table(knn.pred3,test$mpg01)
+mean(knn.pred3 == test$mpg01)
+```
+
+15)
+
+``` {r , Q15}
+#A
+Power <- function(){
+  2^3
+}
+#B
+Power2 <- function(a,b){
+  a^b
+}
+
+Power2(2,3)  #8
+Power2(3,2) # 9
+
+#C
+Power2(10,3)
+Power2(8,17)
+Power2(131,3)
+
+#D
+
+Power3 <- function(a,b){
+  result <- a^b
+  return(result)
+}
+
+#E
+x <- 1:100
+plot(x,Power3(x,2))
+
+#F
+
+PlotPower <- function(x,a){
+  plot(x,Power3(x,a))
+}
+
+PlotPower(1:100,3)
+```
 
 
 
+16)
+
+  At first glance the nox, dis and medv measurements seem to show the most correlation with median(crim). The predictors don't seem to hae guassian distributions so it may not be worth exploring LDA. Will focus on LR, KNN and QDA. The pairs() results show some correlation between predictors so I don't think we can assume independence as required by naive bayes.
+  There may be some collinearity between these predictors as all three reject their null hypothesis when trained alone but only nox does when all used. This is the case even with interactions included. Will proceed with only nox for this model.
+  
+  - LR: 83.6% accuracy
+  - QDA: 80.4%
+  - KNN: 76% (k = 5 and used all three predictors)
+  
+  Based on these results, I would go with the logistic regression model for this scenario. Would need to consider changing threshold probability to see how it adjusts error rate.
+  
+
+``` {r, Q16}
+
+attach(Boston)
+Boston$medcrime <- ifelse(crim > median(crim),1,0)
+pairs(Boston)
+attach(Boston)
+par(mfrow = c(1,3))
+boxplot(nox ~ medcrime)
+boxplot(dis  ~ medcrime)
+boxplot(medv  ~ medcrime)
+
+#Distributions
+par(mfrow = c(1,3))
+hist(nox)
+hist(dis)
+hist(medv)
+
+
+#LR 
+train <- sample(c(TRUE,FALSE),nrow(Boston),replace = TRUE)
+Bos_train <- Boston[train,]
+Bos_test <- Boston[!train,]
+log.fit4 <- glm(medcrime ~ nox, data = Boston, subset = train, family = binomial)
+log.prob4 <- predict(log.fit4, Bos_test,type = "response")
+log.pred4 <- ifelse(log.prob4 > 0.5, 1,0)
+table(log.pred4,Bos_test$medcrime)
+mean(log.pred4 == Bos_test$medcrime)
+
+#QDA
+qda.fit2 <- qda(medcrime ~ nox, data = Boston, subset = train)
+qda.pred2 <- predict(qda.fit2,Bos_test)
+mean(qda.pred2$class == Bos_test$medcrime)
+
+
+#KNN
+knn.pred4 <- knn(Bos_train[,c("nox","dis","medv")],Bos_test[,c("nox","dis","medv")],Bos_train$medcrime,k = 5)
+mean(knn.pred4 == Bos_test$medcrime)
+```
