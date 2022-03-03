@@ -1,0 +1,147 @@
+---
+title: "Chapter 5 Lab"
+subtitle: "Cross-validation and Bootstrap Lab"
+author: "Adrien Osakwe"
+output: pdf_document
+---
+
+## The Validation Set Approach
+
+``` {r, P1, echo = TRUE}
+library(ISLR2)
+set.seed(1)
+train <- sample(392,196)
+lm.fit <- lm(mpg ~ horsepower, data  = Auto , subset = train)
+attach(Auto)
+lin1 <- mean((mpg - predict(lm.fit,Auto))[-train]^2)
+
+lm.fit2 <- lm(mpg ~ poly(horsepower,2), data  = Auto , subset = train)
+quad1 <- mean((mpg - predict(lm.fit2,Auto))[-train]^2)
+
+lm.fit3 <- lm(mpg ~ poly(horsepower,3), data  = Auto , subset = train)
+cube1 <- mean((mpg - predict(lm.fit3,Auto))[-train]^2)
+
+first_set <- rbind(c("Linear","Quadratic","Cubic"),c(lin1,quad1,cube1))
+first_set
+
+
+## We find that the polynomial regressions improve the MSE
+## Will now try with a different validation set
+set.seed(2)
+train <- sample(392,196)
+lm.fit <- lm(mpg ~ horsepower, data  = Auto , subset = train)
+attach(Auto)
+lin2 <-mean((mpg - predict(lm.fit,Auto))[-train]^2)
+
+lm.fit2 <- lm(mpg ~ poly(horsepower,2), data  = Auto , subset = train)
+quad2 <- mean((mpg - predict(lm.fit2,Auto))[-train]^2)
+
+lm.fit3 <- lm(mpg ~ poly(horsepower,3), data  = Auto , subset = train)
+cube2 <- mean((mpg - predict(lm.fit3,Auto))[-train]^2)
+
+## This validation set has on average MSEs than the previous one
+first_set <- rbind(first_set,c(lin2,quad2,cube2))
+first_set
+
+## Overall the quadratic regression seems to have the lowest MSE for modeling
+## mpg based on horsepower
+```
+## Leave-One-Out Cross-Validation
+
+``` {r, P2, echo = TRUE}
+library(boot)
+#The cv.glm function can be used to run the LOOCV method
+glm.fit <- glm(mpg ~ horsepower, data = Auto)
+cv.err <- cv.glm(Auto, glm.fit)
+#This contains the cross-validation results
+cv.err$delta
+
+cv.error <- rep(0, 10)
+for (i in 1:10) {
+  glm.fit <- glm( mpg ~ poly(horsepower, i), data = Auto )
+  cv.error[i] <- cv.glm(Auto , glm.fit)$delta[1]
+}
+cv.error
+```
+
+
+## k-Fold Cross-Validation
+
+``` {r, P3, echo = TRUE}
+set.seed(17)
+cv.error.10 <- rep(0, 10)
+for (i in 1:10) {
+  glm.fit2 <- glm( mpg ~ poly(horsepower, i), data = Auto )
+  cv.error.10[i] <- cv.glm(Auto , glm.fit2, K = 10)$delta[1]
+}
+cv.error.10
+## Computation time is a lot shorter for this (and hence why it is an advantage
+## in comparison to LOOCV)
+
+```
+
+Side note from ISLR: 
+
+"Notice that the computation time is shorter than that of LOOCV. (In
+principle, the computation time for LOOCV for a least squares linear model
+should be faster than for k-fold CV, due to the availability of the formula
+(5.2) for LOOCV; however, unfortunately the cv.glm() function does not
+make use of this formula.)"
+
+## The Bootstrap
+
+``` {r, P4, echo = TRUE}
+library(ISLR2)
+library(boot)
+
+alpha.fn <- function(data,index){
+  X <- data$X[index]
+  Y <- data$Y[index]
+  (var(Y) - cov(X,Y))/(var(Y) + var(X) - 2*cov(X,Y))
+}
+
+#Parameter estimate
+alpha.fn(Portfolio,1:100)
+
+set.seed(7)
+alpha.fn(Portfolio, sample(100,100, replace =T))
+
+##Bootstrapping the parameter estimate using boot()
+
+boot(Portfolio,alpha.fn, R =1000)
+
+
+##Estimate Linear regression model accuracy
+boot.fn <- function(data , index ) + 
+  coef(lm( mpg ~ horsepower , data = data , subset = index ))
+boot.fn(Auto , 1:392)
+
+set.seed(1)
+boot.fn(Auto,sample(392,392, replace = T))
+boot.fn(Auto,sample(392,392, replace = T))
+
+
+boot(Auto,boot.fn,R = 1000)
+
+
+summary(lm( mpg ~ horsepower , data = Auto ))$coef
+## bootstrap gives a more accurate estimation of the SE as it does not make 
+# same assumptions as the summary() method
+
+
+## Adding quadratic variable to model
+boot.fn2 <- function(data , index ) +
+  coef(lm( mpg ~ horsepower + I(horsepower^2),
+           data = data , subset = index ))
+set.seed(1)
+boot.fn2(Auto,sample(392,392, replace = T))
+boot(Auto,boot.fn2,R = 1000)
+summary(lm( mpg ~ horsepower + I(horsepower^2) , data = Auto ))$coef
+
+#Using a design formula that better matches the trend seen in the data gives a
+# Standard Error estimate that is much closer to the bootstrap estimate
+```
+
+# Lab Complete
+
+
