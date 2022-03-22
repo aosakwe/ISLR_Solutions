@@ -1,0 +1,85 @@
+---
+title: "Chapter 5 Exercises"
+subtitle: Cross-validation and Bootstrap Lab
+output:
+  html_document:
+    df_print: paged
+---
+
+# Conceptual
+
+1)
+
+$Var(\alpha X + (1-\alpha)Y) = \alpha Var(X) + (1-\alpha)Var(Y) + 2 \alpha (1-\alpha)Cov(XY)$
+
+$= \alpha^2 \sigma_X^2 + (1-\alpha)^2 \sigma_Y^2 + (2\alpha - 2\alpha^2)\sigma_{XY}$
+
+$\frac{df}{d\alpha} = 2\alpha \sigma^2_X + (2\alpha -2)\sigma^2_Y + (2 -4\alpha)\sigma_{XY}$
+
+Setting the derivative to zero and solving for alpha gives equation 5.6
+
+Second derivative:
+
+$\frac{d^2f}{d^2\alpha} = 2\sigma^2_X + 2\sigma^2_Y - 4\sigma_{XY}$
+$= 2Var(X-Y) \geq 0$
+
+Hence, the extreme value achieved with alpha set to equation 5.6 is indeed a minimum.
+
+2)
+
+a) 
+As the jth observation is one observation in n, the chance of the bootstrap picking it first is $\frac{1}{n}$ meaning the chance of not picking it is $\frac{n-1}{n}$
+
+b)
+As the bootstrap select samples *with replacement*, the samples selected prior to the $k^{th}$ selection have no effect on th $k^{th}$ selection. Hence, the probability is still $\frac{n-1}{n}$
+
+c)
+Because the probability of selecting a specific observation is not affected by the prior selections. The probability that j is not selected at all is simply the probability of not selecting j to the power of the total number of observations (assuming that is the bootstrap is selecting n observations in total)
+
+For answers d to f the answers will be $1 - (\frac{n-1}{n})^n$
+for n = 5,100 and 10000
+
+g)
+
+Generating the plot we see below shows that the probability of j being in the bootstrap plateaus near 0.6 as the total number of samples increases.
+
+``` {r, 2g}
+x <- c(5,100,10000)
+y <- 1 - ((x-1)/(x))^x
+data.frame(Question = c("d","e","f"),
+N =c(5,100,10000), Prob = y)
+
+x <- 1:100000
+y <- 1 - ((x-1)/(x))^x
+plot(x,y)
+```
+
+h)
+
+Much like the plot above, a numerical investigation reaches a similar conclusion. As the number of observations increases, the bootstrap method's probability of including a sample in the bootstrap plateaus near 60%.
+
+``` {r, 2h}
+store <- rep(NA,10000)
+for (i in 1:10000){
+  store[i] <- sum(sample(1:100, rep = TRUE) == 4) > 0
+}
+mean(store)
+```
+3)
+
+a) 
+k-fold cross-validation is implemented by splitting the data intro k equal-sized groups. Then,each group will be used as a test data set with the remaining groups used to train the model. This will lead to k models being built allowing for accurate estimations of the parameters of the model. In particular, it enables a more accurate estimation of the model's test error.
+
+b)
+
+  - K-fold enables us to generate a more accurate estimate of the test error as we can generate multiple models and use different samples in the training and validation set (reduces the variability in the estimates). This helps give us a better idea of the model's accuracy. On the other hand, by dividing the data into smaller groups, we inevitably end up with a smaller validation set to use against the data.
+
+  - LOOCV leads to much more models being built (n models vs k). The key advantage k-folds has here is that it is less computationally intensive as it only builds k models vs n (where n > k). As a result it returns estimates much faster. LOOCV will have less bias than k-folds as it includes almost every sample (n-1) but this means the variance is higher as the training sets for each model are very similar.
+
+4)
+
+We can use the bootstrap method to make B number of estimates of the prediction. We can then use equation 5.8 to determine the SD of the prediction.
+
+# Applied
+
+5)
