@@ -1,16 +1,14 @@
 ---
 title: "Chapter 5 Exercises"
 subtitle: Cross-validation and Bootstrap Lab
-output:
-  html_document:
-    df_print: paged
+output: pdf_document
 ---
 
 # Conceptual
 
 1)
 
-$Var(\alpha X + (1-\alpha)Y) = \alpha Var(X) + (1-\alpha)Var(Y) + 2 \alpha (1-\alpha)Cov(XY)$
+$Var(\alpha X + (1-\alpha)Y) = \alpha^2 Var(X) + (1-\alpha)^2Var(Y) + 2 \alpha (1-\alpha)Cov(XY)$
 
 $= \alpha^2 \sigma_X^2 + (1-\alpha)^2 \sigma_Y^2 + (2\alpha - 2\alpha^2)\sigma_{XY}$
 
@@ -83,3 +81,206 @@ We can use the bootstrap method to make B number of estimates of the prediction.
 # Applied
 
 5)
+
+``` {r, 5}
+# A
+library(ISLR2)
+attach(Default)
+log.fit <- glm(default ~ income + balance, data = Default, family = binomial)
+# B
+set.seed(1)
+train <- sample(c(TRUE,FALSE),nrow(Default),replace = TRUE)
+log.fit <- glm(default ~ income + balance,
+               data = Default, family = binomial, subset = train)
+log.prob <- predict(log.fit, Default[!train,], type = "response")
+log.pred <- rep("No",length(log.prob))
+log.pred[log.prob > 0.5] <- "Yes"
+mean(log.pred != Default[!train,"default"])
+#We get a ~2.5% error rate
+
+# C
+for (i in 1:3){
+  train <- sample(c(TRUE,FALSE),nrow(Default),replace = TRUE)
+  log.fit <- glm(default ~ income + balance,
+                 data = Default, family = binomial, subset = train)
+  log.prob <- predict(log.fit, Default[!train,], type = "response")
+  log.pred <- rep("No",length(log.prob))
+  log.pred[log.prob > 0.5] <- "Yes"
+  print(mean(log.pred != Default[!train,"default"]))
+}
+# We see the variability in the error based on the exact samples used in the 
+#training model
+
+#D
+for (i in 1:3){
+  train <- sample(c(TRUE,FALSE),nrow(Default),replace = TRUE)
+  log.fit <- glm(default ~ income + balance + student,
+                 data = Default, family = binomial, subset = train)
+  log.prob <- predict(log.fit, Default[!train,], type = "response")
+  log.pred <- rep("No",length(log.prob))
+  log.pred[log.prob > 0.5] <- "Yes"
+  print(mean(log.pred != Default[!train,"default"]))
+}
+#Seem to get slightly lower test error rates when student
+#is included although with enough repeats the averages are likely to be
+#identical
+```
+
+
+6)
+
+``` {r, 6}
+#A
+
+set.seed(2022)
+log.fit <- glm(default ~ income + balance, data = Default,family = binomial)
+summary(log.fit)$coeff[,2]
+
+#B
+boot.fn <- function(data, index){
+  fit <- glm(default ~ income + balance, data = Default,
+             family = binomial,subset = index)
+  fit$coef
+}
+
+#C
+library(boot)
+boot(Default,boot.fn,R = 1000)
+
+#D
+#The estimates for SE seem to be very similar between bootstrap and summary
+
+```
+
+
+
+7)
+
+
+``` {r, 7}
+library(ISLR2)
+#Using Weekly data set
+
+# A
+log.fit <- glm(Direction ~ Lag1 + Lag2, data = Weekly, family = binomial)
+# B
+log.fit <- glm(Direction ~ Lag1 + Lag2, data = Weekly[-1,], family = binomial)
+# C
+pred <- predict(log.fit,Weekly[1,],type = "response")
+ifelse(pred > 0.5,"Up","Down")
+# D
+ans_d <- sapply(1:nrow(Weekly), function(i) {
+  log.fit <- glm(Direction ~ Lag1 + Lag2, data = Weekly[-i,], family = binomial)
+  prob <- predict(log.fit,Weekly[i,],type = "response")
+  pred <-ifelse(prob > 0.5,"Up","Down")
+  ifelse(pred == Weekly[i,"Direction"],0,1)
+})
+
+#E 
+mean(ans_d)
+#We get an error rate of ~45%
+```
+
+
+8)
+
+  A)
+  
+  N is 100 (100 x/y observations), p is 1 (we have a polynomial linear regression)
+
+``` {r, 8}
+# A
+set.seed(1)
+x <- rnorm(100)
+y <- x -2*x^2 + rnorm(100)
+
+# B
+plot(x,y)
+# See an inverted parabola that  has a global maximum at the origin
+
+# C
+library(boot)
+set.seed(1)
+q_8 <- data.frame(x = x,y = y)
+fit <- glm(y ~ x)
+lin <- cv.glm(q_8,fit)$delta[1]
+fit <- glm(y ~ poly(x,2))
+sqrd <- cv.glm(q_8,fit)$delta[1]
+fit <- glm(y ~ poly(x,3))
+cube <- cv.glm(q_8,fit)$delta[1]
+fit <- glm(y ~ poly(x,4))
+quad <- cv.glm(q_8,fit)$delta[1]
+rbind(c("Poly(1)","Poly(2)","Poly(3)","Poly(4)"),c(lin,sqrd,cube,quad))
+
+# D
+set.seed(2022)
+fit <- glm(y ~ x)
+lin <- cv.glm(q_8,fit)$delta[1]
+fit <- glm(y ~ poly(x,2))
+sqrd <- cv.glm(q_8,fit)$delta[1]
+fit <- glm(y ~ poly(x,3))
+cube <- cv.glm(q_8,fit)$delta[1]
+fit <- glm(y ~ poly(x,4))
+quad <- cv.glm(q_8,fit)$delta[1]
+rbind(c("Poly(1)","Poly(2)","Poly(3)","Poly(4)"),c(lin,sqrd,cube,quad))
+#The errors seem to be fairlt similar across seeds
+
+#E
+
+#The second degree polynomial model has the lowest error which
+#makes sense as it is closest to the true relationship between 
+#x and y
+
+# F
+#Observing the summary stats for the models in c shows that 
+#the only significant coefficients are those of x and x^2, 
+#indicating that the least squares results agree with LOOCV 
+#that the best model only uses the second degree polynomial.
+```
+
+
+9)
+
+``` {r, 9}
+# A
+attach(Boston)
+mean(medv)
+
+# B
+sd(medv)/sqrt(length(medv))
+
+# C
+boot.fn <- function(data,index){
+  mean(data[index])
+}
+boot(medv,boot.fn, R = 1000)
+#The answer is fairly close to B
+
+# D
+conf <- c(mean(medv) - 2*0.4119,mean(medv) + 2*0.4119)
+t <- t.test(medv)
+rbind(conf,t$conf.int[1:2])
+## The confidence intervals are approximately the same
+
+# E
+median(medv)
+
+# F
+med.fn <- function(data,index){
+  median(data[index])
+}
+boot(medv,med.fn,R = 1000)
+#The bootstrap returns a median that matches our estimate and 
+#a relatively small standard error
+
+# G
+quantile(medv,0.1)
+
+# H
+quant.fn <- function(data, index){
+  quantile(data[index],0.1)
+}
+boot(medv,quant.fn, R = 1000)
+# The bootstrap returns a 10th percentile estimate that matches
+# our own and also has a small standard error.
+```
